@@ -1,25 +1,86 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title: "Reproducible Research Project 1"
+author: "Jeff Lee"
 ---
 
+## Load required libraries
 
-## Loading and preprocessing the data
+```{r}
+library(knitr)
+library(ggplot2)
+library(dplyr)
+```
+
+## Reading activity data set
+
+```{r}
+activity <- read.csv("activity.csv", header = TRUE)
+```
+
+## Question 1 - What is the total number of steps taken per day
+
+```{r}
+stepsperday <- tapply(activity$steps, activity$date, sum)
+hist(stepsperday, breaks = 50, col = "blue", xlab = "Steps", main = "Histogram Of Steps Per Day")
+mean(stepsperday, na.rm = TRUE)
+median(stepsperday, na.rm = TRUE)
+```
+
+## Question 2 - What is the average daily activity pattern?
+
+```{r}
+stepsbyinterval <- tapply(activity$steps, activity$interval, mean, na.rm = TRUE)
+plot(as.numeric(names(stepsbyinterval)),stepsbyinterval, xlab = "Interval", ylab = "Steps", main = "Average Activity By Interval", type = "l")
+sort(stepsbyinterval, decreasing = TRUE)[1]
+```
+
+## Question 3 - Imputing missing values
+
+```{r}
+sum(is.na(activity$steps))
+```
+
+Strategy to impute is to insert the mean of data in for the na values.
+
+```{r}
+activity2 <- activity
+nadata <- is.na(activity2$steps)
+avg_interval <- tapply(activity2$steps, activity2$interval, mean, na.rm=TRUE, simplify = TRUE)
+activity2$steps[nadata] <- avg_interval[as.character(activity2$interval[nadata])]
+
+sum(is.na(activity2$steps))
+
+stepsperdaynona <- tapply(activity2$steps, activity2$date, sum)
+hist(stepsperdaynona, breaks = 50, col = "blue", xlab = "Steps", main = "Histogram Of Steps Per Day (Imputed Data)")
+mean(stepsperdaynona, na.rm = TRUE)
+median(stepsperdaynona, na.rm = TRUE)
+```
+
+Mean stays the same while median increases slightly.
+
+## Question 4 - Are there differences in activity patterns between weekdays and weekends?
+
+```{r}
+activity2$day <- ifelse(weekdays(as.Date(activity2$date)) == "Saturday" | weekdays(as.Date(activity2$date)) == "Sunday", "Weekend", "Weekday")
+
+stepsbyintervalweekend <- tapply(activity2[activity2$day == "Weekend" ,]$steps, activity2[activity2$day == "Weekend" ,]$interval, mean, na.rm = TRUE)
+
+stepsbyintervalweekday <- tapply(activity2[activity2$day == "Weekday" ,]$steps, activity2[activity2$day == "Weekday" ,]$interval, mean, na.rm = TRUE)
 
 
+par(mfrow=c(1,2))
 
-## What is mean total number of steps taken per day?
+plot(as.numeric(names(stepsbyintervalweekday)), 
+     stepsbyintervalweekday, 
+     xlab = "Interval", 
+     ylab = "Steps", 
+     main = "Average Activity By Interval (Weekdays)", 
+     type = "l")
 
-
-
-## What is the average daily activity pattern?
-
-
-
-## Imputing missing values
-
-
-
-## Are there differences in activity patterns between weekdays and weekends?
+plot(as.numeric(names(stepsbyintervalweekend)), 
+     stepsbyintervalweekend, 
+     xlab = "Interval", 
+     ylab = "Steps", 
+     main = "Average Activity By Interval (Weekend)", 
+     type = "l")
+```
